@@ -1,0 +1,14 @@
+name: bcihack-GUI
+channels:
+- defaults
+dependencies:
+- python>=3.10
+- pip
+- pip:
+  - PyQT5>=5.15.6
+  - pyqtgraph>=0.13.1
+  - numpy>=1.20.3
+  - brainflow>=5.0.0
+  - scipy>=1.7.1
+  - matplotlib
+  - sklearn
