@@ -456,6 +456,8 @@ class Core(QMainWindow):
             print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
             logging.info(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
             self.indicatorAPP.showCruz(True) #mostramos la cruz
+            self.indicatorAPP.showWhiteSquare(False)
+            self.indicatorAPP.showBlackSquare(True)
             self.indicatorAPP.update_order("Fijar la mirada en la cruz...")
             #Generamos un número aleatorio entre self.startingTimes[0] y self.startingTimes[1], redondeado a 1 decimal
             startingTime = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 1)
@@ -466,6 +468,8 @@ class Core(QMainWindow):
 
         elif self.__trialPhase == 1:
             self.indicatorAPP.showCruz(False) #desactivamos la cruz
+            self.indicatorAPP.showWhiteSquare(True)
+            self.indicatorAPP.showBlackSquare(False)
             logging.info("Iniciamos fase cue del trial")
             claseActual = self.trialsSesion[self.__trialNumber]
             classNameActual = self.clasesNames[self.classes.index(claseActual)]

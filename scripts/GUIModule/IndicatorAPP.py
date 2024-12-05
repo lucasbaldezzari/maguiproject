@@ -24,6 +24,8 @@ class IndicatorAPP(QDialog):
 
         self.Centrar(self.cruz)
         self.showCruz(False) #Si seleccionas False no hará ruido al instanciar la interfaz
+        self.showWhiteSquare(False)
+        self.showBlackSquare(True)
         self.showBar(False)
         self.Bajar(self.progressBar, 200)
 
@@ -95,6 +97,30 @@ class IndicatorAPP(QDialog):
         else:
             self.cruz.setVisible(False)
             self.Centrar(self.label_orden)
+
+    def showBlackSquare(self, mostrar:bool = False):
+        """
+        Muestra o no la cruz de preparación en la interfaz
+        """
+        if mostrar:
+            self.black_square.setVisible(True)
+            # self.Subir(self.label_orden)
+            # winsound.Beep(440, 1000)
+        else:
+            self.black_square.setVisible(False)
+            # self.Centrar(self.label_orden)
+
+    def showWhiteSquare(self, mostrar:bool = False):
+        """
+        Muestra o no la cruz de preparación en la interfaz
+        """
+        if mostrar:
+            self.white_square.setVisible(True)
+            # self.Subir(self.label_orden)
+            # winsound.Beep(440, 1000)
+        else:
+            self.white_square.setVisible(False)
+            # self.Centrar(self.label_orden)
 
     def showBar(self, mostrar:bool):
         """
