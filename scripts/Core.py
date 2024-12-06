@@ -429,8 +429,6 @@ class Core(QMainWindow):
         self.trialsSesion = np.array([[i] * self.ntrials for i in self.classes]).ravel()
         random.shuffle(self.trialsSesion)
 
-
-
     def checkLastTrial(self):
         """Función para chequear si se alcanzó el último trial de la sesión.
         Se compara el número de trial actual con el número de trials totales dado en self.trialsSesion"""
@@ -496,8 +494,8 @@ class Core(QMainWindow):
         else:
             #Al finalizar el trial, guardamos los datos de EEG
             logging.info("Guardando datos de EEG")
-            newData = self.eeglogger.getData(self.__startingTime + self.cueDuration + self.finishDuration, removeDataFromBuffer=False)
-            self.eeglogger.saveData(newData[self.channels], fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
+            # newData = self.eeglogger.getData(self.__startingTime + self.cueDuration + self.finishDuration, removeDataFromBuffer=False)
+            # self.eeglogger.saveData(newData[self.channels], fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
             self.saveEvents() #guardamos los eventos de la sesión
             self.__trialPhase = 0 #volvemos a la fase inicial del trial
             self.supervisionAPP.reset_timeBar = True
@@ -553,8 +551,8 @@ class Core(QMainWindow):
         else:
             #Al finalizar el trial, guardamos los datos de EEG
             logging.info("Guardando datos de EEG")
-            newData = self.eeglogger.getData(self.__startingTime + self.cueDuration + self.finishDuration, removeDataFromBuffer=False)
-            self.eeglogger.saveData(newData[self.channels], fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
+            # newData = self.eeglogger.getData(self.__startingTime + self.cueDuration + self.finishDuration, removeDataFromBuffer=False)
+            # self.eeglogger.saveData(newData[self.channels], fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
             self.saveEvents() #guardamos los eventos de la sesión
             self.__trialPhase = 0 #volvemos a la fase inicial del trial
             self.__trialNumber += 1 #incrementamos el número de trial
@@ -567,14 +565,14 @@ class Core(QMainWindow):
         de clasificación.
         """
         
-        self._dataToClasify = self.eeglogger.getData(self.lenForClassifier, removeDataFromBuffer=False)[self.channels]
+        # self._dataToClasify = self.eeglogger.getData(self.lenForClassifier, removeDataFromBuffer=False)[self.channels]
 
-        if self.session_started and not self.classifyEEGTimerStarted:
-            self.classifyEEGTimer.start() #inicio el timer para clasificar el EEG
-            self.classifyEEGTimerStarted = True
+        # if self.session_started and not self.classifyEEGTimerStarted:
+        #     self.classifyEEGTimer.start() #inicio el timer para clasificar el EEG
+        #     self.classifyEEGTimerStarted = True
 
-        if self.arduinoFlag and self.arduino.checkConnection():
-            self.arduino.sendMessage([b'1',self.comando])
+        # if self.arduinoFlag and self.arduino.checkConnection():
+        #     self.arduino.sendMessage([b'1',self.comando])
 
         self.checkLastTrial()
             
@@ -628,33 +626,23 @@ class Core(QMainWindow):
         clasificar y se añade el nuevo trozo de datos. La idea es actualizar los datos mientras la persona ejecuta
         la tarea.
         """
-        newData = self.eeglogger.getData(self.lenToClassify, removeDataFromBuffer = False)[self.channels]
-        samplesToRemove = int(self.lenToClassify*self.sample_rate) #muestras a eliminar del buffer interno de datos
-        self._dataToClasify = np.roll(self._dataToClasify, -samplesToRemove, axis=1)
-        self._dataToClasify[:, -samplesToRemove:] = newData
-        channels, samples = self._dataToClasify.shape
-        #camibamos la forma de los datos para que sea compatible con el modelo
-        trialToPredict = self._dataToClasify.reshape(1,channels,samples)
-        self.prediction = self.pipeline.predict(trialToPredict) #aplicamos data al pipeline
-        self.probas = self.pipeline.predict_proba(trialToPredict) #obtenemos las probabilidades de cada clase
-        #actualizo barras de probabilidad en supervision app
-        self.supervisionAPP.update_propbars(self.probas[0])
+        # newData = self.eeglogger.getData(self.lenToClassify, removeDataFromBuffer = False)[self.channels]
+        # samplesToRemove = int(self.lenToClassify*self.sample_rate) #muestras a eliminar del buffer interno de datos
+        # self._dataToClasify = np.roll(self._dataToClasify, -samplesToRemove, axis=1)
+        # self._dataToClasify[:, -samplesToRemove:] = newData
+        # channels, samples = self._dataToClasify.shape
+        # #camibamos la forma de los datos para que sea compatible con el modelo
+        # trialToPredict = self._dataToClasify.reshape(1,channels,samples)
+        # self.prediction = self.pipeline.predict(trialToPredict) #aplicamos data al pipeline
+        # self.probas = self.pipeline.predict_proba(trialToPredict) #obtenemos las probabilidades de cada clase
+        # #actualizo barras de probabilidad en supervision app
+        # self.supervisionAPP.update_propbars(self.probas[0])
 
         if self.typeSesion == 1:
             ## nos quedamos con la probabilida de la clase actual
             probaClaseActual = self.probas[0][self.classes.index(self.trialsSesion[self.__trialNumber])]
             self.indicatorAPP.actualizar_barra(probaClaseActual) #actualizamos la barra de probabilidad
             max_prob = max(self.probas[0])
-
-            # if max_prob >= self.umbralClassifier:
-            #     index_max_prob = np.where(self.probas[0] == max_prob)[0][0]
-            #     ClaseActual = self.classes[index_max_prob]
-            #     self.comando = str(ClaseActual).encode() if max_prob >= self.umbralClassifier else b'0'
-            #     # if self.arduinoFlag and self.arduino.checkConnection():
-            #     if ClaseActual == 1: #mano izquierda
-            #         self.arduino.sendMessage([b'5'])
-            #     if ClaseActual == 2: #mano derecha
-            #         self.arduino.sendMessage([b'6'])
 
         elif self.typeSesion == 2:
             ##nos quedamos con el máximo valor dentro de self.probas
@@ -680,7 +668,7 @@ class Core(QMainWindow):
         logging.info(f"Iniciando APP de Supervisión")
 
         self.supervisionAPP = self.__supervisionAPPClass([str(clase) for clase in self.classes], self.channels)
-        self.supervisionAPP.show() #mostramos la APP de supervisión
+        # self.supervisionAPP.show() #mostramos la APP de supervisión
 
         if self.typeSesion == 0:
             self.indicatorAPP.update_order("Iniciando sesión de entrenamiento") #actualizamos app
@@ -742,17 +730,6 @@ class Core(QMainWindow):
         ## Este array representa un trial de EEG
         trial = np.ones((1, n_channels, classify_samples), dtype=np.int8)
 
-        # try:
-        #     print("******************")
-        #     print(trial.shape)
-        #     self.pipeline.predict(trial)
-        # except ValueError as e:
-        #     self.closeApp()
-        #     print(e)
-        #     mensaje = "Compruebe que la cantidad de canales a usar se correspondan con la cantidad de canales usada durante el entrenamiento del clasificador"
-        #     logging.error(mensaje)
-        #     raise Exception(mensaje)
-        
         ##chequeamos si self.pipeline posee el método predict_proba
         if not hasattr(self.pipeline, "predict_proba"):
             self.closeApp()

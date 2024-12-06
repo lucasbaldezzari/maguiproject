@@ -11,10 +11,10 @@
         "Mano Derecha"
     ],
     "startingTimes": [
-        3.0,
+        2.0,
         3.0
     ],
-    "cueDuration": 4.0,
+    "cueDuration": 3.0,
     "finishDuration": 3.0,
     "lenToClassify": 1.0,
     "onlineCommandSendingTime": 1.0,

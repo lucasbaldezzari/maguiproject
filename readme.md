@@ -1,4 +1,4 @@
-# Repositorio proyecto *Magali Pereyra*
+# Repositorio proyecto *Magalí Pereyra* - Director: *Lucas Baldezzari*
 
 ## Objetivos
 
@@ -21,7 +21,7 @@ Por otro lado, el software desarrollado será de utilidad para generar los archi
 Seguir los siguientes pasos.
 
 1. Clonar o descargar el [repositorio](https://github.com/lucasbaldezzari/maguiproject) del proyecto.
-2. Utilizando miniconda ejecutar desde el *cmd* de Windows lo siguiente *conda env create -f bcihack2_enviroment.yml*.
+2. Utilizando miniconda ejecutar desde el *cmd* y en la carpeta principal del repositorio clonado el siguiente comando *conda env create -f bcihack2_enviroment.yml*.
 3. Testear que el ambiente fue creado correctamente ejecutando desde el *cmd* lo siguiente: *conda activate magui*.
 
 Luego sería posible utilizar Visual Studio para ejecutar los scripts utilizando el ambiente creado.
