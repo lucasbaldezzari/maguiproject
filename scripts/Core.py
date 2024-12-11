@@ -136,6 +136,8 @@ class Core(QMainWindow):
         elif self.boardParams["boardName"] == "synthetic":
             self.filterParameters["sample_rate"] = 250.
 
+        self.__opacity_value = 0.0 #valor de opacidad para el texto de tarea
+
         self.sample_rate = self.filterParameters["sample_rate"]
 
         ## Archivo de eventos de una sesión de entrenamiento
@@ -316,10 +318,6 @@ class Core(QMainWindow):
         eventsFile = open(self.eventsFileName, "w")
         eventsFile.write("trialNumber,classNumber,className,prediction,probabilities,startingTime,cueDuration,finishDuration,trialTime,trialTime(legible)\n")
         eventsFile.close()
-        
-        #Si la carpeta pipelines dentro de self.subjectName no existe, se crea
-        if not os.path.exists(rootFolder + self.subjectName + "/pipelines"):
-            os.makedirs(rootFolder + self.subjectName + "/pipelines")
 
     def saveEvents(self):
         """Función para almacenar los eventos de la sesión en el archivo txt self.eventsFileName
@@ -445,62 +443,113 @@ class Core(QMainWindow):
         else:
             pass
 
+    def fase_preparacion(self):
+        print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
+        logging.info(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
+        self.indicatorAPP.showCruz(True) #mostramos la cruz
+        self.indicatorAPP.showWhiteSquare(False)
+        self.indicatorAPP.showBlackSquare(True)
+        self.indicatorAPP.update_order("Fijar la mirada en la cruz...")
+        #Generamos un número aleatorio entre self.startingTimes[0] y self.startingTimes[1], redondeado a 1 decimal
+        startingTime = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 1)
+        self.__startingTime = startingTime
+        startingTime = int(startingTime * 1000) #lo pasamos a milisegundos
+        self.__trialPhase = 1 # pasamos a la siguiente fase -> Mostrar cue progresivamente
+        self.trainingEEGThreadTimer.setInterval(startingTime) #esperamos el tiempo aleatorio
+
+    def show_cue(self):
+        self.indicatorAPP.showCruz(False) #desactivamos la cruz
+        self.indicatorAPP.showWhiteSquare(True)
+        self.indicatorAPP.showBlackSquare(False)
+        claseActual = self.trialsSesion[self.__trialNumber]
+        classNameActual = self.clasesNames[self.classes.index(claseActual)]
+        self.__opacity_value += 0.05
+        if self.__opacity_value <= 1.0:
+            background = f"rgba(38,38,38,{self.__opacity_value*100}%)"
+            font_color = f"rgba(255,255,255,{self.__opacity_value*100}%)"
+            self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
+                                            background = background, font_color = font_color)
+        else:
+            self.__trialPhase =  2 # pasamos a la siguiente fase -> Fase de tarea o cue
+            self.__opacity_value = 1
+        self.trainingEEGThreadTimer.setInterval(int(50))
+
+    def fase_cue(self):
+        logging.info("Iniciamos fase cue del trial")
+        claseActual = self.trialsSesion[self.__trialNumber]
+        classNameActual = self.clasesNames[self.classes.index(claseActual)]
+        self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
+                                            background = "rgba(38,38,38,100%)", font_color = "white")
+        self.__trialPhase = 3 # Empezamos a apagar el estímulo
+        probas = np.random.rand(5)
+        probas = probas/np.sum(probas)
+        self.supervisionAPP.update_propbars(probas)
+        self.trainingEEGThreadTimer.setInterval(int(self.cueDuration * 1000))
+
+    def hide_cue(self):
+        claseActual = self.trialsSesion[self.__trialNumber]
+        classNameActual = self.clasesNames[self.classes.index(claseActual)]
+        self.__opacity_value -= 0.05
+        if self.__opacity_value >= 0.0:
+            background = f"rgba(38,38,38,{self.__opacity_value*100}%)"
+            font_color = f"rgba(255,255,255,{self.__opacity_value*100}%)"
+            self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
+                                            background = background, font_color = font_color)
+        else:
+            background = f"rgba(38,38,38,0%)"
+            font_color = f"rgba(255,255,255,0%)"
+            self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
+                                            background = background, font_color = font_color)
+            self.__trialPhase =  4 ##guardamos los datos de EEG
+            self.__opacity_value = 0.0
+        self.trainingEEGThreadTimer.setInterval(int(50))
+
+    def fase_end(self):
+        logging.info("Iniciamos fase de finalización del trial")
+        self.indicatorAPP.update_order("Fin de tarea...")
+        self.__trialPhase = -1 #Fase para guardar datos de EEG
+        self.trainingEEGThreadTimer.setInterval(int(self.finishDuration * 1000))
+
+    def save_data(self):
+        #Al finalizar el trial, guardamos los datos de EEG
+        # logging.info("Guardando datos de EEG")
+        # newData = self.eeglogger.getData(self.__startingTime + self.cueDuration + self.finishDuration, removeDataFromBuffer=False)
+        newData = np.array([1])
+        self.eeglogger.saveData(newData, fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
+        self.saveEvents() #guardamos los eventos de la sesión
+        self.__trialPhase = 0 #volvemos a la fase inicial del trial
+        self.supervisionAPP.reset_timeBar = True
+        self.__trialNumber += 1 #incrementamos el número de trial
+        self.trainingEEGThreadTimer.setInterval(1)
+
     def trainingEEGThread(self):
         """Función para hilo de lectura de EEG durante fase de entrenamiento.
         Sólo se almacena trozos de EEG correspondientes a la suma de startTrainingTime y cueDuration.
         """
 
         if self.__trialPhase == 0:
-            print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
-            logging.info(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
-            self.indicatorAPP.showCruz(True) #mostramos la cruz
-            self.indicatorAPP.showWhiteSquare(False)
-            self.indicatorAPP.showBlackSquare(True)
-            self.indicatorAPP.update_order("Fijar la mirada en la cruz...")
-            #Generamos un número aleatorio entre self.startingTimes[0] y self.startingTimes[1], redondeado a 1 decimal
-            startingTime = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 1)
-            self.__startingTime = startingTime
-            startingTime = int(startingTime * 1000) #lo pasamos a milisegundos
-            self.__trialPhase = 1 # pasamos a la siguiente fase -> CUE
-            self.trainingEEGThreadTimer.setInterval(startingTime) #esperamos el tiempo aleatorio
+            self.fase_preparacion()
+            ##pasamos a la fase 1
 
-        elif self.__trialPhase == 1:
-            self.indicatorAPP.showCruz(False) #desactivamos la cruz
-            self.indicatorAPP.showWhiteSquare(True)
-            self.indicatorAPP.showBlackSquare(False)
-            logging.info("Iniciamos fase cue del trial")
-            claseActual = self.trialsSesion[self.__trialNumber]
-            classNameActual = self.clasesNames[self.classes.index(claseActual)]
-            self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
-                                              background = "rgb(38,38,38)", font_color = "white")
-            self.__trialPhase = 2 # la siguiente fase es la de finalización del trial
-            self.trainingEEGThreadTimer.setInterval(int(self.cueDuration * 1000))
+        elif self.__trialPhase == 1: #empezamos a mostrar estímulos
+            self.show_cue()
+            ##pasamos a la fase 2
 
-            ##genero un array de 5 elementos con números elatotios entre 0 y 1
-            ##Estos números representan la probabilidad de que se muestre cada barra
-            ##La suma de estos números debe ser 1
-            ##Esto se hace para que la barra se mueva de manera aleatoria
-            ##Si se quiere que la barra se mueva de manera lineal, se puede usar un array de 5 elementos
-            probas = np.random.rand(5)
-            probas = probas/np.sum(probas)
-            self.supervisionAPP.update_propbars(probas)
+        elif self.__trialPhase == 2: ##Fase de tarea o cue
+            self.fase_cue()
+            ##pasamos a la fase 3
 
-        elif self.__trialPhase == 2:
-            logging.info("Iniciamos fase de finalización del trial")
-            self.indicatorAPP.update_order("Fin de tarea...")
-            self.__trialPhase = -1 #Fase para guardar datos de EEG
-            self.trainingEEGThreadTimer.setInterval(int(self.finishDuration * 1000))
+        elif self.__trialPhase == 3: ##apagamos el estímulo
+            self.hide_cue()
+            ##pasamos a la fase 4
+
+        elif self.__trialPhase == 4: ##fase de finalización
+            self.fase_end()
+            ##pasamos a la fase 5
 
         else:
-            #Al finalizar el trial, guardamos los datos de EEG
-            logging.info("Guardando datos de EEG")
-            # newData = self.eeglogger.getData(self.__startingTime + self.cueDuration + self.finishDuration, removeDataFromBuffer=False)
-            # self.eeglogger.saveData(newData[self.channels], fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
-            self.saveEvents() #guardamos los eventos de la sesión
-            self.__trialPhase = 0 #volvemos a la fase inicial del trial
-            self.supervisionAPP.reset_timeBar = True
-            self.__trialNumber += 1 #incrementamos el número de trial
-            self.trainingEEGThreadTimer.setInterval(1)
+            self.save_data()
+            ##pasamos a la fase 0
 
     def feedbackThread(self):
         """Función para hilo de lectura de EEG durante fase de entrenamiento.
@@ -511,7 +560,7 @@ class Core(QMainWindow):
             print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}") 
             logging.info(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
             self.indicatorAPP.showCruz(True) #mostramos la cruz
-            self.indicatorAPP.update_order("Fijar la mirada en la cruz...")
+            self.indicatorAPP.update_order("Fijar la mirada en la cruz...", opacity = 0.3)
             #Generamos un número aleatorio entre self.startingTimes[0] y self.startingTimes[1], redondeado a 1 decimal
             startingTime = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 1)
             self.__startingTime = startingTime
@@ -526,7 +575,7 @@ class Core(QMainWindow):
             claseActual = self.trialsSesion[self.__trialNumber]
             classNameActual = self.clasesNames[self.classes.index(claseActual)]
             self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
-                                              background = "rgb(38,38,38)", font_color = "white")
+                                              background = "rgba(38,38,38,50%)", font_color = "white", opacity = 0.3)
             self.indicatorAPP.showBar(True)
             self.indicatorAPP.actualizar_barra(0) #iniciamos la barra en 0%
             

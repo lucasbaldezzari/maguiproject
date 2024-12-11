@@ -37,8 +37,10 @@ class IndicatorAPP(QDialog):
         #obtengo la paleta de colores summer_r
         self.colormap_barra = matplotlib.colormaps["summer_r"]
         del matplotlib
+        self.opacity_effect = QGraphicsOpacityEffect()
 
-    def update_order(self, texto, fontsize = 36, background = None, border = "1px", font_color = "black"):
+    def update_order(self, texto, fontsize = 36, background = None, border = "0px", font_color = "black",
+                     opacity = 1.0):
         """
         Actualiza la etiqueta que da la orden
             texto (str): texto de la orden
@@ -49,6 +51,9 @@ class IndicatorAPP(QDialog):
             self.label_orden.setStyleSheet(f"background-color: {background};border: {border} solid black;color: {font_color}")
         else:
             self.label_orden.setStyleSheet(f"background-color: {self.background_color}; border: 0px solid black;color: {self.font_color}")
+        
+        # self.opacity_effect.setOpacity(opacity)
+        # self.label_orden.setGraphicsEffect(self.opacity_effect)
         
     def actualizar_barra(self, probabilidad:float = 0.5):
         """

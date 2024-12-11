@@ -14,7 +14,7 @@
         3.0,
         3.0
     ],
-    "cueDuration": 3.0,
+    "cueDuration": 2.0,
     "finishDuration": 3.0,
     "lenToClassify": 1.0,
     "onlineCommandSendingTime": 1.0,

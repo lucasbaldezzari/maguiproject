@@ -67,7 +67,7 @@ class EEGLogger():
                 #chequeamos si el archivo existe
                 if os.path.isfile(path + fileName):
                     storedData = np.load(path + fileName, allow_pickle = True)
-                    storedData = np.concatenate((storedData, eegdata), axis = 1)
+                    # storedData = np.concatenate((storedData, eegdata), axis = 1)
                     with open(path + fileName, "wb") as f:
                         np.save(f, storedData)
                 else:
