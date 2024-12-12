@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>981</width>
+    <width>1024</width>
     <height>558</height>
    </rect>
   </property>
@@ -114,7 +114,7 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="black_square">
+  <widget class="QLabel" name="cue_off_square">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -122,8 +122,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>70</width>
-     <height>70</height>
+     <width>81</width>
+     <height>81</height>
     </rect>
    </property>
    <property name="mouseTracking">
@@ -136,7 +136,7 @@
     <pixmap>images/black_square.png</pixmap>
    </property>
   </widget>
-  <widget class="QLabel" name="white_square">
+  <widget class="QLabel" name="cue_on_square">
    <property name="enabled">
     <bool>true</bool>
    </property>
@@ -144,8 +144,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>70</width>
-     <height>70</height>
+     <width>81</width>
+     <height>81</height>
     </rect>
    </property>
    <property name="mouseTracking">
@@ -158,6 +158,58 @@
     <pixmap>images/white_square.png</pixmap>
    </property>
   </widget>
+  <widget class="QLabel" name="session_on_square">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>0</y>
+     <width>81</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="mouseTracking">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>images/white_square.png</pixmap>
+   </property>
+  </widget>
+  <widget class="QLabel" name="session_off_square">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>0</y>
+     <width>81</width>
+     <height>81</height>
+    </rect>
+   </property>
+   <property name="mouseTracking">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>images/black_square.png</pixmap>
+   </property>
+  </widget>
+  <zorder>cue_on_square</zorder>
+  <zorder>label_accion</zorder>
+  <zorder>label_orden</zorder>
+  <zorder>cruz</zorder>
+  <zorder>progressBar</zorder>
+  <zorder>cue_off_square</zorder>
+  <zorder>session_on_square</zorder>
+  <zorder>session_off_square</zorder>
  </widget>
  <resources/>
  <connections/>

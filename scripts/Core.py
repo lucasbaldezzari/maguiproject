@@ -447,8 +447,8 @@ class Core(QMainWindow):
         print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
         logging.info(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
         self.indicatorAPP.showCruz(True) #mostramos la cruz
-        self.indicatorAPP.showWhiteSquare(False)
-        self.indicatorAPP.showBlackSquare(True)
+        self.indicatorAPP.showCueOnSquare(False)
+        self.indicatorAPP.showCueOffSquare(True)
         self.indicatorAPP.update_order("Fijar la mirada en la cruz...")
         #Generamos un número aleatorio entre self.startingTimes[0] y self.startingTimes[1], redondeado a 1 decimal
         startingTime = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 1)
@@ -459,8 +459,8 @@ class Core(QMainWindow):
 
     def show_cue(self):
         self.indicatorAPP.showCruz(False) #desactivamos la cruz
-        self.indicatorAPP.showWhiteSquare(True)
-        self.indicatorAPP.showBlackSquare(False)
+        self.indicatorAPP.showCueOnSquare(True)
+        self.indicatorAPP.showCueOffSquare(False)
         claseActual = self.trialsSesion[self.__trialNumber]
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
         self.__opacity_value += 0.05
@@ -719,6 +719,9 @@ class Core(QMainWindow):
         self.supervisionAPP = self.__supervisionAPPClass([str(clase) for clase in self.classes], self.channels)
         # self.supervisionAPP.show() #mostramos la APP de supervisión
 
+        self.indicatorAPP.showSessionOnSquare(True)
+        self.indicatorAPP.showSessionOffSquare(False)
+        
         if self.typeSesion == 0:
             self.indicatorAPP.update_order("Iniciando sesión de entrenamiento") #actualizamos app
         
