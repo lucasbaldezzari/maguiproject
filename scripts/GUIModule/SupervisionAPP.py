@@ -84,11 +84,12 @@ class SupervisionAPP(QDialog):
         self.tipo_sesiones = ["Entrenamiento", "Calibración/Feedback", "Online"]
         self.fases = {
             0: "Preparación",
-            1: "Prendiendo tarea",
-            2: "Acción",
-            3: "Apagando tarea",
-            4: "Acción",
-            -1: "Guardando EEG / descanso"
+            1: "Apagando texto preparación",
+            2: "Prendiendo tarea",
+            3: "Acción",
+            4: "Apagando tarea",
+            5: "Acción",
+            6: "Guardando EEG / descanso"
         } ## Los nombres de las fases se defasan para estar en concordancia con el Core.py
 
         self._init_timeseries()

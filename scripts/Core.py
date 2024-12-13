@@ -136,7 +136,8 @@ class Core(QMainWindow):
         elif self.boardParams["boardName"] == "synthetic":
             self.filterParameters["sample_rate"] = 250.
 
-        self.__opacity_value = 0.0 #valor de opacidad para el texto de tarea
+        self.__cue_opacity_value = 0.0 #valor de opacidad para el texto de tarea
+        self.__start_opactity_value = 1.0 #valor de opacidad para el texto de preparación
 
         self.sample_rate = self.filterParameters["sample_rate"]
 
@@ -352,14 +353,12 @@ class Core(QMainWindow):
         Iniciamos streaming de EEG."""
         
         print("Seteando EEGLogger...")
-        logging.info("Seteando EEGLogger...")
         board, board_id = setupBoard(boardName = self.boardName, serial_port = self.serialPort)
         self.eeglogger = EEGLogger(board, board_id)
         self.eeglogger.connectBoard()
         self.eeglogger.setStreamingChannels(self.channels)
         time.sleep(1) #esperamos 1 segundo para que se conecte la placa
         print("Iniciando streaming de EEG...")
-        logging.info("Iniciando streaming de EEG...")
 
         # channels_names = self.eeglogger.board.get_eeg_channels(board_id)
 
@@ -433,7 +432,6 @@ class Core(QMainWindow):
         if self.__trialNumber == len(self.trialsSesion):
             print("Último trial alcanzado")
             print("Sesión finalizada")
-            logging.info("Se alcanzó el último trial de la sesión")
             self.checkTrialsTimer.stop()
             self.trainingEEGThreadTimer.stop()
             self.feedbackThreadTimer.stop()
@@ -445,42 +443,60 @@ class Core(QMainWindow):
 
     def fase_preparacion(self):
         print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
-        logging.info(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
-        self.indicatorAPP.showCruz(True) #mostramos la cruz
+        # self.indicatorAPP.showCruz(False) #mostramos la cruz
         self.indicatorAPP.showCueOnSquare(False)
         self.indicatorAPP.showCueOffSquare(True)
-        self.indicatorAPP.update_order("Fijar la mirada en la cruz...")
+        self.indicatorAPP.update_order("Preparate para la próxima tarea...")
         #Generamos un número aleatorio entre self.startingTimes[0] y self.startingTimes[1], redondeado a 1 decimal
         startingTime = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 1)
         self.__startingTime = startingTime
         startingTime = int(startingTime * 1000) #lo pasamos a milisegundos
         self.__trialPhase = 1 # pasamos a la siguiente fase -> Mostrar cue progresivamente
         self.trainingEEGThreadTimer.setInterval(startingTime) #esperamos el tiempo aleatorio
+    
+    def hide_preparación(self):
+        delta_opacity = 1/((self.__startingTime*1000)/50)
+        self.__start_opactity_value -= delta_opacity
+        mensaje = "Preparate para la próxima tarea..."
+        if self.__start_opactity_value >= 0.0:
+            background = f"rgba(255,255,255,{self.__start_opactity_value*100}%)"
+            font_color = f"rgba(38,38,38,{self.__start_opactity_value*100}%)"
+            
+            self.indicatorAPP.update_order(mensaje, fontsize = 46,
+                                            background = background, font_color = font_color)
+            self.trainingEEGThreadTimer.setInterval(int(50)) #esperamos 50ms
+        else:
+            background = f"rgba(255,255,255,0%)"
+            font_color = f"rgba(38,38,38,0%)"
+            self.indicatorAPP.update_order(mensaje, fontsize = 46,
+                                            background = background, font_color = font_color)
+            self.__trialPhase =  2 ##guardamos los datos de EEG
+            self.__start_opactity_value = 1.0
+            self.trainingEEGThreadTimer.setInterval(int(500))
 
     def show_cue(self):
-        self.indicatorAPP.showCruz(False) #desactivamos la cruz
+        # self.indicatorAPP.showCruz(False) #desactivamos la cruz
         self.indicatorAPP.showCueOnSquare(True)
         self.indicatorAPP.showCueOffSquare(False)
         claseActual = self.trialsSesion[self.__trialNumber]
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
-        self.__opacity_value += 0.05
-        if self.__opacity_value <= 1.0:
-            background = f"rgba(38,38,38,{self.__opacity_value*100}%)"
-            font_color = f"rgba(255,255,255,{self.__opacity_value*100}%)"
+        self.__cue_opacity_value += 0.05
+        if self.__cue_opacity_value <= 1.0:
+            background = f"rgba(38,38,38,{self.__cue_opacity_value*100}%)"
+            font_color = f"rgba(255,255,255,{self.__cue_opacity_value*100}%)"
             self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
                                             background = background, font_color = font_color)
         else:
-            self.__trialPhase =  2 # pasamos a la siguiente fase -> Fase de tarea o cue
-            self.__opacity_value = 1
+            self.__trialPhase =  3 # pasamos a la siguiente fase -> Fase de tarea o cue
+            self.__cue_opacity_value = 1
         self.trainingEEGThreadTimer.setInterval(int(50))
 
     def fase_cue(self):
-        logging.info("Iniciamos fase cue del trial")
         claseActual = self.trialsSesion[self.__trialNumber]
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
         self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
                                             background = "rgba(38,38,38,100%)", font_color = "white")
-        self.__trialPhase = 3 # Empezamos a apagar el estímulo
+        self.__trialPhase = 4 # Empezamos a apagar el estímulo
         probas = np.random.rand(5)
         probas = probas/np.sum(probas)
         self.supervisionAPP.update_propbars(probas)
@@ -489,32 +505,29 @@ class Core(QMainWindow):
     def hide_cue(self):
         claseActual = self.trialsSesion[self.__trialNumber]
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
-        self.__opacity_value -= 0.05
-        if self.__opacity_value >= 0.0:
-            background = f"rgba(38,38,38,{self.__opacity_value*100}%)"
-            font_color = f"rgba(255,255,255,{self.__opacity_value*100}%)"
+        self.__cue_opacity_value -= 0.05
+        if self.__cue_opacity_value >= 0.0:
+            background = f"rgba(38,38,38,{self.__cue_opacity_value*100}%)"
+            font_color = f"rgba(255,255,255,{self.__cue_opacity_value*100}%)"
             self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
                                             background = background, font_color = font_color)
+            self.trainingEEGThreadTimer.setInterval(int(50))
         else:
             background = f"rgba(38,38,38,0%)"
             font_color = f"rgba(255,255,255,0%)"
             self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
                                             background = background, font_color = font_color)
-            self.__trialPhase =  4 ##guardamos los datos de EEG
-            self.__opacity_value = 0.0
-        self.trainingEEGThreadTimer.setInterval(int(50))
-
+            self.__trialPhase =  5 ##guardamos los datos de EEG
+            self.__cue_opacity_value = 0.0
+            self.trainingEEGThreadTimer.setInterval(int(1000))
+        
     def fase_end(self):
-        logging.info("Iniciamos fase de finalización del trial")
         self.indicatorAPP.update_order("Fin de tarea...")
-        self.__trialPhase = -1 #Fase para guardar datos de EEG
+        self.__trialPhase = 6 #Fase para guardar datos de EEG
         self.trainingEEGThreadTimer.setInterval(int(self.finishDuration * 1000))
 
     def save_data(self):
-        #Al finalizar el trial, guardamos los datos de EEG
-        # logging.info("Guardando datos de EEG")
-        # newData = self.eeglogger.getData(self.__startingTime + self.cueDuration + self.finishDuration, removeDataFromBuffer=False)
-        newData = np.array([1])
+        newData = np.array([1]) ##fake data
         self.eeglogger.saveData(newData, fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
         self.saveEvents() #guardamos los eventos de la sesión
         self.__trialPhase = 0 #volvemos a la fase inicial del trial
@@ -529,25 +542,29 @@ class Core(QMainWindow):
 
         if self.__trialPhase == 0:
             self.fase_preparacion()
-            ##pasamos a la fase 1
+            ##pasamos a la fase 1 para esconder el texto de preparación
 
-        elif self.__trialPhase == 1: #empezamos a mostrar estímulos
-            self.show_cue()
+        if self.__trialPhase == 1:
+            self.hide_preparación()
             ##pasamos a la fase 2
 
-        elif self.__trialPhase == 2: ##Fase de tarea o cue
-            self.fase_cue()
+        elif self.__trialPhase == 2: #empezamos a mostrar estímulos
+            self.show_cue()
             ##pasamos a la fase 3
 
-        elif self.__trialPhase == 3: ##apagamos el estímulo
-            self.hide_cue()
+        elif self.__trialPhase == 3: ##Fase de tarea o cue
+            self.fase_cue()
             ##pasamos a la fase 4
 
-        elif self.__trialPhase == 4: ##fase de finalización
-            self.fase_end()
+        elif self.__trialPhase == 4: ##apagamos el estímulo
+            self.hide_cue()
             ##pasamos a la fase 5
 
-        else:
+        elif self.__trialPhase == 5: ##fase de finalización
+            self.fase_end()
+            ##pasamos a la fase 6
+
+        elif self.__trialPhase == 6:
             self.save_data()
             ##pasamos a la fase 0
 
@@ -558,7 +575,6 @@ class Core(QMainWindow):
 
         if self.__trialPhase == 0:
             print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}") 
-            logging.info(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
             self.indicatorAPP.showCruz(True) #mostramos la cruz
             self.indicatorAPP.update_order("Fijar la mirada en la cruz...", opacity = 0.3)
             #Generamos un número aleatorio entre self.startingTimes[0] y self.startingTimes[1], redondeado a 1 decimal
@@ -569,7 +585,6 @@ class Core(QMainWindow):
             self.feedbackThreadTimer.setInterval(startingTime) #esperamos el tiempo aleatorio
 
         elif self.__trialPhase == 1:
-            logging.info("Iniciamos fase cue del trial")
             self.__trialPhase = 2 # la siguiente fase es la de finalización del trial
             self.indicatorAPP.showCruz(False)
             claseActual = self.trialsSesion[self.__trialNumber]
@@ -592,14 +607,12 @@ class Core(QMainWindow):
             self.classifyEEGTimer.stop() #detenemos el timer de clasificación
             self.classifyEEGTimerStarted = False
             self.indicatorAPP.showBar(False)
-            logging.info("Iniciamos fase de finalización del trial")
             self.indicatorAPP.update_order("Fin de tarea...")
             self.__trialPhase = -1 #volvemos a la fase inicial del trial
             self.feedbackThreadTimer.setInterval(int(self.finishDuration * 1000))
 
         else:
             #Al finalizar el trial, guardamos los datos de EEG
-            logging.info("Guardando datos de EEG")
             # newData = self.eeglogger.getData(self.__startingTime + self.cueDuration + self.finishDuration, removeDataFromBuffer=False)
             # self.eeglogger.saveData(newData[self.channels], fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
             self.saveEvents() #guardamos los eventos de la sesión
@@ -613,17 +626,8 @@ class Core(QMainWindow):
         en el tiempo seteado en self.lenToClassify, es decir, en el tiempo que se desea obtener un valor
         de clasificación.
         """
-        
-        # self._dataToClasify = self.eeglogger.getData(self.lenForClassifier, removeDataFromBuffer=False)[self.channels]
-
-        # if self.session_started and not self.classifyEEGTimerStarted:
-        #     self.classifyEEGTimer.start() #inicio el timer para clasificar el EEG
-        #     self.classifyEEGTimerStarted = True
-
-        # if self.arduinoFlag and self.arduino.checkConnection():
-        #     self.arduino.sendMessage([b'1',self.comando])
-
-        self.checkLastTrial()
+        ##TODO
+        pass
             
     def showGUIAPPs(self):
         """Función para configurar la sesión de entrenamiento usando self.confiAPP.
@@ -675,46 +679,12 @@ class Core(QMainWindow):
         clasificar y se añade el nuevo trozo de datos. La idea es actualizar los datos mientras la persona ejecuta
         la tarea.
         """
-        # newData = self.eeglogger.getData(self.lenToClassify, removeDataFromBuffer = False)[self.channels]
-        # samplesToRemove = int(self.lenToClassify*self.sample_rate) #muestras a eliminar del buffer interno de datos
-        # self._dataToClasify = np.roll(self._dataToClasify, -samplesToRemove, axis=1)
-        # self._dataToClasify[:, -samplesToRemove:] = newData
-        # channels, samples = self._dataToClasify.shape
-        # #camibamos la forma de los datos para que sea compatible con el modelo
-        # trialToPredict = self._dataToClasify.reshape(1,channels,samples)
-        # self.prediction = self.pipeline.predict(trialToPredict) #aplicamos data al pipeline
-        # self.probas = self.pipeline.predict_proba(trialToPredict) #obtenemos las probabilidades de cada clase
-        # #actualizo barras de probabilidad en supervision app
-        # self.supervisionAPP.update_propbars(self.probas[0])
-
-        if self.typeSesion == 1:
-            ## nos quedamos con la probabilida de la clase actual
-            probaClaseActual = self.probas[0][self.classes.index(self.trialsSesion[self.__trialNumber])]
-            self.indicatorAPP.actualizar_barra(probaClaseActual) #actualizamos la barra de probabilidad
-            max_prob = max(self.probas[0])
-
-        elif self.typeSesion == 2:
-            ##nos quedamos con el máximo valor dentro de self.probas
-            max_prob = max(self.probas[0])
-            ##obtenemos el índice del valor máximo
-            index_max_prob = np.where(self.probas[0] == max_prob)[0][0]
-            ##me quedo con el valor de la clase correspondiente al índice
-            ClaseActual = self.classes[index_max_prob]
-            self.comando = str(ClaseActual).encode() if max_prob >= self.umbralClassifier else b'0'
-
-            ##aumentamos en 1 el acumulador de rondas
-            self.numberOfRounds_Accum += 1
-            if self.numberOfRounds_Accum == self.numberOfRounds:
-                self.__trialNumber += 1
-                print(f"Trial {self.__trialNumber} de {len(self.trialsSesion)}")
-                print(self.probas)
-                self.numberOfRounds_Accum = 0
+        #not used
+        pass
 
     def start(self):
         """Método para iniciar la sesión"""
         print(f"Preparando sesión {self.sesionNumber} del sujeto {self.subjectName}")
-        logging.info(f"Preparando sesión {self.sesionNumber} del sujeto {self.subjectName}")
-        logging.info(f"Iniciando APP de Supervisión")
 
         self.supervisionAPP = self.__supervisionAPPClass([str(clase) for clase in self.classes], self.channels)
         # self.supervisionAPP.show() #mostramos la APP de supervisión
@@ -735,7 +705,6 @@ class Core(QMainWindow):
         durante la sesión o de Entrenamiento, de Calibración u Online cuando estas están en marcha."""
 
         print("Iniciando Sanity Check...")
-        logging.info("Iniciando Sanity Check...")
 
         training_events = pd.read_csv(self.training_events_file, sep = ",")
         # trained_classesNames = training_events["className"].unique()
@@ -749,25 +718,21 @@ class Core(QMainWindow):
         ## Chequeamos que self.classes y self.clasesNames tengan la misma cantidad de elementos
         if len(self.classes) != len(self.clasesNames):
             self.closeApp()
-            logging.error("La cantidad de clases y la cantidad de nombres de clases deben ser iguales")
             raise Exception("La cantidad de clases y la cantidad de nombres de clases deben ser iguales")
         
         ## chequeamos que no se repitan nombres en self.clasesNames
         if len(self.clasesNames) != len(set(self.clasesNames)):
             self.closeApp()
-            logging.error("Hay nombres de clases repetidos")
             raise Exception("Hay nombres de clases repetidos")
         
         ## chequeamos que nos e repitan valores en self.classes
         if len(self.classes) != len(set(self.classes)):
             self.closeApp()
-            logging.error("Hay valores de clases repetidos")
             raise Exception("Hay valores de clases repetidos")
         
         ## Chequeamos que la duración del trial sea igual al utilizado para entrenar el clasificador
         if train_samples != classify_samples:
             self.closeApp()
-            logging.error("La duración del trial a clasificar debe ser igual al utilizado para entrenar el clasificador")
             raise Exception("La duración del trial a clasificar debe ser igual al utilizado para entrenar el clasificador")
 
         ## Chequeamos que los trained_classesValues estén presentes dentro de self.classes
@@ -775,7 +740,6 @@ class Core(QMainWindow):
             ## me quedo con los valores que no están en self.classes
             values_not_in_classes = trained_classesValues[~np.isin(trained_classesValues, self.classes)]
             self.closeApp()
-            logging.error("Hay una o más clases a utilizar que no se usaron durante en la sesión de entrenamiento", values_not_in_classes)
             raise Exception("Hay una o más clases a utilizar que no se usaron durante en la sesión de entrenamiento", values_not_in_classes)
  
         ## generamos un numpy array con valores enteros igual a 1. El shape es de la forma [1, n_channels, classify_samples]
@@ -785,14 +749,12 @@ class Core(QMainWindow):
         ##chequeamos si self.pipeline posee el método predict_proba
         if not hasattr(self.pipeline, "predict_proba"):
             self.closeApp()
-            logging.error("El pipeline no posee el método predict_proba")
             raise Exception("El pipeline no posee el método predict_proba")
         else: #si lo posee, chequeamos que la cantidad de probabilidades retornada sea igual a la cantidad de clases
             probas = self.pipeline.predict_proba(trial)
             if len(probas[0]) != len(self.classes):
                 self.closeApp()
                 mensaje = "La cantidad de probabilidades retornada por el pipeline es diferente a la cantidad de clases que se intenta clasificar. \nLa cantidad y el tipo de clases a clasificar debe corresponderse con la usada durante el entrenamiento del clasificador"
-                logging.error(mensaje)
                 raise Exception(mensaje)
         
         if self.arduinoFlag:
@@ -804,11 +766,9 @@ class Core(QMainWindow):
                 self.arduino.iniSesion()
             except Exception as e:
                 print(e)
-                logging.error(e)
                 print("No se pudo establecer comunicación con arduino")
                 self.arduinoFlag = 0
             
-        logging.info("Sanity Check finalizado. Todo OK")
         print("Sanity Check finalizado. Todo OK")
 
     def startSesion(self):
@@ -829,13 +789,11 @@ class Core(QMainWindow):
 
         if self.typeSesion == 0: #sesión de Entrenamiento
             print("Inicio de sesión de entrenamiento")
-            logging.info("Inicio de sesión de entrenamiento")
             self.trainingEEGThreadTimer.start() #iniciamos timer para controlar hilo entrenamiento
             self.session_started = True
             
         elif self.typeSesion == 1: #sesión de Calibración
             print("Inicio de sesión de Feedback")
-            logging.info("Inicio de sesión de Feedback")
             self.setPipeline() #seteamos el pipeline
             self.sanityChecks() ## sanity check
             self.feedbackThreadTimer.start() #iniciamos timer para controlar hilo calibración
