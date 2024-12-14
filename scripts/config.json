@@ -7,8 +7,8 @@
         2
     ],
     "clasesNames": [
-        "Mano Izquierda",
-        "Mano Derecha"
+        "IZQUIERDA",
+        "DERECHA"
     ],
     "startingTimes": [
         3.0,
@@ -21,7 +21,7 @@
     "lenForClassifier": 4.0,
     "umbralClassifier": 0.8,
     "numberOfRounds": 4.0,
-    "subjectName": "testing",
+    "subjectName": "first_test",
     "sesionNumber": 1,
     "boardParams": {
         "boardName": "synthetic",

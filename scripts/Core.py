@@ -446,25 +446,26 @@ class Core(QMainWindow):
         # self.indicatorAPP.showCruz(False) #mostramos la cruz
         self.indicatorAPP.showCueOnSquare(False)
         self.indicatorAPP.showCueOffSquare(True)
-        self.indicatorAPP.update_order("Preparate para la próxima tarea...")
+        mensaje = "Preparate..."
+        self.indicatorAPP.update_order(mensaje)
         #Generamos un número aleatorio entre self.startingTimes[0] y self.startingTimes[1], redondeado a 1 decimal
         startingTime = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 1)
         self.__startingTime = startingTime
         startingTime = int(startingTime * 1000) #lo pasamos a milisegundos
         self.__trialPhase = 1 # pasamos a la siguiente fase -> Mostrar cue progresivamente
-        self.trainingEEGThreadTimer.setInterval(startingTime) #esperamos el tiempo aleatorio
+        self.trainingEEGThreadTimer.setInterval(1) #esperamos el tiempo aleatorio
     
     def hide_preparación(self):
         delta_opacity = 1/((self.__startingTime*1000)/50)
         self.__start_opactity_value -= delta_opacity
-        mensaje = "Preparate para la próxima tarea..."
+        mensaje = "Preparate..."
         if self.__start_opactity_value >= 0.0:
             background = f"rgba(255,255,255,{self.__start_opactity_value*100}%)"
             font_color = f"rgba(38,38,38,{self.__start_opactity_value*100}%)"
             
             self.indicatorAPP.update_order(mensaje, fontsize = 46,
                                             background = background, font_color = font_color)
-            self.trainingEEGThreadTimer.setInterval(int(50)) #esperamos 50ms
+            self.trainingEEGThreadTimer.setInterval(50) #esperamos 50ms
         else:
             background = f"rgba(255,255,255,0%)"
             font_color = f"rgba(38,38,38,0%)"
@@ -472,15 +473,15 @@ class Core(QMainWindow):
                                             background = background, font_color = font_color)
             self.__trialPhase =  2 ##guardamos los datos de EEG
             self.__start_opactity_value = 1.0
-            self.trainingEEGThreadTimer.setInterval(int(500))
+            self.trainingEEGThreadTimer.setInterval(1000)
 
     def show_cue(self):
         # self.indicatorAPP.showCruz(False) #desactivamos la cruz
-        self.indicatorAPP.showCueOnSquare(True)
-        self.indicatorAPP.showCueOffSquare(False)
+        # self.indicatorAPP.showCueOnSquare(True)
+        # self.indicatorAPP.showCueOffSquare(False)
         claseActual = self.trialsSesion[self.__trialNumber]
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
-        self.__cue_opacity_value += 0.05
+        self.__cue_opacity_value += 0.1
         if self.__cue_opacity_value <= 1.0:
             background = f"rgba(38,38,38,{self.__cue_opacity_value*100}%)"
             font_color = f"rgba(255,255,255,{self.__cue_opacity_value*100}%)"
@@ -489,9 +490,11 @@ class Core(QMainWindow):
         else:
             self.__trialPhase =  3 # pasamos a la siguiente fase -> Fase de tarea o cue
             self.__cue_opacity_value = 1
-        self.trainingEEGThreadTimer.setInterval(int(50))
+        self.trainingEEGThreadTimer.setInterval(50)
 
     def fase_cue(self):
+        self.indicatorAPP.showCueOnSquare(True)
+        self.indicatorAPP.showCueOffSquare(False)
         claseActual = self.trialsSesion[self.__trialNumber]
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
         self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
@@ -511,7 +514,7 @@ class Core(QMainWindow):
             font_color = f"rgba(255,255,255,{self.__cue_opacity_value*100}%)"
             self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
                                             background = background, font_color = font_color)
-            self.trainingEEGThreadTimer.setInterval(int(50))
+            self.trainingEEGThreadTimer.setInterval(50)
         else:
             background = f"rgba(38,38,38,0%)"
             font_color = f"rgba(255,255,255,0%)"
@@ -519,7 +522,7 @@ class Core(QMainWindow):
                                             background = background, font_color = font_color)
             self.__trialPhase =  5 ##guardamos los datos de EEG
             self.__cue_opacity_value = 0.0
-            self.trainingEEGThreadTimer.setInterval(int(1000))
+            self.trainingEEGThreadTimer.setInterval(1000)
         
     def fase_end(self):
         self.indicatorAPP.update_order("Fin de tarea...")
