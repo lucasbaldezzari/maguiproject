@@ -1,7 +1,7 @@
 {
     "typeSesion": 0,
     "cueType": 0,
-    "ntrials": 3,
+    "ntrials": 10,
     "classes": [
         1,
         2
@@ -11,8 +11,8 @@
         "DERECHA"
     ],
     "startingTimes": [
-        3.0,
-        3.0
+        2.0,
+        2.0
     ],
     "cueDuration": 2.0,
     "finishDuration": 2.0,

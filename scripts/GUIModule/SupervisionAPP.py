@@ -88,7 +88,8 @@ class SupervisionAPP(QDialog):
             2: "Prendiendo tarea",
             3: "Acción",
             4: "Apagando tarea",
-            5: "Acción",
+            5: "Mensaje de fin de tarea",
+            6: "Apagando mensaje de fin de tarea",
             6: "Guardando EEG / descanso"
         } ## Los nombres de las fases se defasan para estar en concordancia con el Core.py
 
