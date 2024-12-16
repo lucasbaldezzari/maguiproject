@@ -15,6 +15,7 @@ Por otro lado, el software desarrollado será de utilidad para generar los archi
 
 - Se recominedo utilizar [Miniconda](https://docs.anaconda.com/miniconda/) para instalar un ambiente con las dependencias de Python.
 - Las dependencias pueden ser encontradas en el archivo *bcihack2_enviroment.yml*.
+- Se recomienda instalar la versión liviana del [PQt5 Designer](https://build-system.fman.io/qt-designer-download)
 
 #### Instalando el ambiente
 

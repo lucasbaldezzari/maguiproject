@@ -158,6 +158,8 @@ class Core(QMainWindow):
         self.__trialPhase = 0 #0: Inicio, 1: Cue, 2: Finalización
         self.__trialNumber = 0 #Número de trial actual
         self.__startingTime = self.startingTimes[1]
+        self.__trial_init_time = 0
+        self.__cue_init_time = 0
         self.rootFolder = "data/"
 
         self.session_started = False #Flag para indicar si se inició la sesión
@@ -170,6 +172,8 @@ class Core(QMainWindow):
         Funcionamiento QTimer
         https://stackoverflow.com/questions/42279360/does-a-qtimer-object-run-in-a-separate-thread-what-is-its-mechanism
         """
+
+
 
         #timer para controlar el inicio de la sesión
         self.iniSesionTimer = QTimer()
@@ -312,12 +316,12 @@ class Core(QMainWindow):
                 i += 1
         
         #Cramos un archivo txt que contiene la siguiente cabecera:
-        #trialNumber, classNumber, className,startingTime,cueDuration,trialTime,time-time(formateado)
+        #trialNumber,classNumber,className,prediction,probabilities,startingTime,cueDuration,finishDuration,trialTime,trialTime(legible)
         #Primero creamos el archivo y agregamos la cabecera. Lo guardamos en rootFolder/self.subjectName/eegdata/self.sesionNumber
         #con el mismo nombre que self.eegFileName pero con extensión .txt
         self.eventsFileName = self.eegStoredFolder + self.eegFileName[:-4] + "_events" + ".txt"
         eventsFile = open(self.eventsFileName, "w")
-        eventsFile.write("trialNumber,classNumber,className,prediction,probabilities,startingTime,cueDuration,finishDuration,trialTime,trialTime(legible)\n")
+        eventsFile.write("trialNumber,classNumber,className,startingTime,cueInitTime,trialTime,cueDuration,finishDuration,trialTime(legible)\n")
         eventsFile.close()
 
     def saveEvents(self):
@@ -335,15 +339,13 @@ class Core(QMainWindow):
         trialTime = time.time()
         #formateamos el timestamp actual a formato legible del tipo DD/MM/YYYY HH:MM:SS
         trialTimeLegible = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime(trialTime))
+        
+        ##Cabecera de archivo de eventos
+        ##"trialNumber,classNumber,className,startingTime,cueInitTime,trialTime,cueDuration,finishDuration,trialTime(legible)\n"
 
         if self.typeSesion == 0:
-            eventos = f"{self.__trialNumber+1},{claseActual},{classNameActual},{-1},{-1},{self.__startingTime},{self.cueDuration},{self.finishDuration},{trialTime},{trialTimeLegible}\n"
-        
-        elif self.typeSesion == 1:
-            eventos = f"{self.__trialNumber+1},{claseActual},{classNameActual},{self.prediction[-1]},{self.probas[-1]},{self.__startingTime},{self.cueDuration},{self.finishDuration},{trialTime},{trialTimeLegible}\n"
+            eventos = f"{self.__trialNumber+1},{claseActual},{classNameActual},{self.__trial_init_time},{self.__cue_init_time},{trialTime},{self.cueDuration},{self.finishDuration},{trialTimeLegible}\n"
 
-        elif self.typeSesion == 2:
-            pass
 
         eventsFile.write(eventos)
         eventsFile.close()
@@ -442,6 +444,7 @@ class Core(QMainWindow):
             pass
 
     def fase_preparacion(self):
+        self.__trial_init_time = time.time()
         print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
         # self.indicatorAPP.showCruz(False) #mostramos la cruz
         self.indicatorAPP.showCueOnSquare(False)
@@ -476,9 +479,6 @@ class Core(QMainWindow):
             self.trainingEEGThreadTimer.setInterval(1000)
 
     def show_cue(self):
-        # self.indicatorAPP.showCruz(False) #desactivamos la cruz
-        # self.indicatorAPP.showCueOnSquare(True)
-        # self.indicatorAPP.showCueOffSquare(False)
         claseActual = self.trialsSesion[self.__trialNumber]
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
         self.__cue_opacity_value += 0.1
@@ -493,6 +493,7 @@ class Core(QMainWindow):
         self.trainingEEGThreadTimer.setInterval(50)
 
     def fase_cue(self):
+        self.__cue_init_time = time.time()
         self.indicatorAPP.showCueOnSquare(True)
         self.indicatorAPP.showCueOffSquare(False)
         claseActual = self.trialsSesion[self.__trialNumber]
@@ -575,7 +576,6 @@ class Core(QMainWindow):
         """Función para hilo de lectura de EEG durante fase de entrenamiento.
         Sólo se almacena trozos de EEG correspondientes a la suma de startTrainingTime y cueDuration.
         """
-
         if self.__trialPhase == 0:
             print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}") 
             self.indicatorAPP.showCruz(True) #mostramos la cruz
@@ -652,22 +652,7 @@ class Core(QMainWindow):
     def updateSupervisionAPP(self):
         """Función para actualizar la APP de supervisión."""
         ##Actualizamos gráficas de EEG y FFTgit
-
-        #obtenemos los datos de EEG
-        data = self.eeglogger.getData(self.__supervisionAPPTime/1000, removeDataFromBuffer = False)[self.channels]
-
-        self.supervisionAPP.update_plots(data)
-
-        if self.session_started:
-            #actualizamos información de la sesión
-            self.supervisionAPP.update_info(self.typeSesion,
-                                            self.__startingTime + self.cueDuration + self.finishDuration,
-                                            self.__trialPhase,
-                                            self.__trialNumber,
-                                            len(self.trialsSesion))
-            
-            self.supervisionAPP.update_timebar(self.__startingTime + self.cueDuration + self.finishDuration,
-                                               self.__supervisionAPPTime/1000, self.__trialPhase)
+        pass
 
     def classifyEEG(self):
         """Función para clasificar EEG
