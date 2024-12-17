@@ -83,14 +83,15 @@ class SupervisionAPP(QDialog):
         self.reset_timeBar = False #para resetear la barra de progreso
         self.tipo_sesiones = ["Entrenamiento", "Calibración/Feedback", "Online"]
         self.fases = {
-            0: "Preparación",
-            1: "Apagando texto preparación",
-            2: "Prendiendo tarea",
-            3: "Acción",
-            4: "Apagando tarea",
-            5: "Mensaje de fin de tarea",
-            6: "Apagando mensaje de fin de tarea",
-            6: "Guardando EEG / descanso"
+            0: "Mostrando mensaje de preparación",
+            1: "Mensaje de Preparación",
+            2: "Apagando texto preparación",
+            3: "Prendiendo tarea",
+            4: "Cue On",
+            5: "Apagando tarea",
+            6: "Mensaje de fin de tarea",
+            7: "Apagando mensaje de fin de tarea",
+            8: "Guardando EEG / descanso"
         } ## Los nombres de las fases se defasan para estar en concordancia con el Core.py
 
         self._init_timeseries()
