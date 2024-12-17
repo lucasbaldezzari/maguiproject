@@ -141,7 +141,7 @@ class Core(QMainWindow):
         self.__start_opactity_value = 1.0 #valor de opacidad para el texto de preparación
         self.__final_opactity_value = 1.0 #valor de opacidad para el texto de finalización
 
-
+        self.trialDuration = 0 #timestamp para guardar el tiempo de cada trial
         self.sample_rate = self.filterParameters["sample_rate"]
 
         ## Archivo de eventos de una sesión de entrenamiento
@@ -177,8 +177,6 @@ class Core(QMainWindow):
         Funcionamiento QTimer
         https://stackoverflow.com/questions/42279360/does-a-qtimer-object-run-in-a-separate-thread-what-is-its-mechanism
         """
-
-
 
         #timer para controlar el inicio de la sesión
         self.iniSesionTimer = QTimer()
@@ -341,16 +339,15 @@ class Core(QMainWindow):
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
 
         #obtenemos el timestamp actual
-        trialTime = time.time()
+        # self.trialDuration = time.time()
         #formateamos el timestamp actual a formato legible del tipo DD/MM/YYYY HH:MM:SS
-        trialTimeLegible = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime(trialTime))
+        trialTimeLegible = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime(self.trialDuration))
         
         ##Cabecera de archivo de eventos
         ##"trialNumber,classNumber,className,startingTime,cueInitTime,trialTime,cueDuration,finishDuration,trialTime(legible)\n"
 
         if self.typeSesion == 0:
-            eventos = f"{self.__trialNumber+1},{claseActual},{classNameActual},{self.__trial_init_time},{self.__cue_init_time},{trialTime},{self.cueDuration},{self.finishDuration},{trialTimeLegible}\n"
-
+            eventos = f"{self.__trialNumber+1},{claseActual},{classNameActual},{self.__trial_init_time},{self.__cue_init_time},{self.trialDuration},{self.cueDuration},{self.finishDuration},{trialTimeLegible}\n"
 
         eventsFile.write(eventos)
         eventsFile.close()
@@ -449,12 +446,12 @@ class Core(QMainWindow):
             pass
 
     def show_fase_preparacion(self):
-        self.__preparacion_opacity_value += 0.05 #0.1/self.__deltat = 500ms = 0.5s
+        """Función para mostrar el mensaje de preparación de manera paulatina"""
+        self.__preparacion_opacity_value += 0.05 #0.1/self.__deltat = 1000ms = 1.0s
         if self.__preparacion_opacity_value <= 1.0:
             mensaje = "Relajate..."
             background = f"rgba(255,255,255,{self.__preparacion_opacity_value*100}%)"
             font_color = f"rgba(38,38,38,{self.__preparacion_opacity_value*100}%)"
-            
             self.indicatorAPP.update_order(mensaje, fontsize = 46,
                                             background = background, font_color = font_color)
             self.trainingEEGThreadTimer.setInterval(self.__deltat)
@@ -462,7 +459,6 @@ class Core(QMainWindow):
             self.__trialPhase =  1 # pasamos a la siguiente fase -> Fase de tarea o cue
             self.__preparacion_opacity_value = 0.0
             self.trainingEEGThreadTimer.setInterval(1)
-        
 
     def fase_preparacion(self):
         self.__trial_init_time = time.time()
@@ -480,7 +476,6 @@ class Core(QMainWindow):
         if self.__start_opactity_value >= 0.0:
             background = f"rgba(255,255,255,{self.__start_opactity_value*100}%)"
             font_color = f"rgba(38,38,38,{self.__start_opactity_value*100}%)"
-            
             self.indicatorAPP.update_order(mensaje, fontsize = 46,
                                             background = background, font_color = font_color)
             self.trainingEEGThreadTimer.setInterval(self.__deltat) #esperamos 50ms
@@ -491,7 +486,7 @@ class Core(QMainWindow):
                                             background = background, font_color = font_color)
             self.__trialPhase =  3 ##guardamos los datos de EEG
             self.__start_opactity_value = 1.0
-            self.trainingEEGThreadTimer.setInterval(3000)
+            self.trainingEEGThreadTimer.setInterval(2000)
 
     def show_cue(self):
         claseActual = self.trialsSesion[self.__trialNumber]
@@ -516,9 +511,6 @@ class Core(QMainWindow):
         self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
                                             background = "rgba(38,38,38,100%)", font_color = "white")
         self.__trialPhase = 5 # Empezamos a apagar el estímulo
-        # probas = np.random.rand(5)
-        # probas = probas/np.sum(probas)
-        # self.supervisionAPP.update_propbars(probas)
         self.trainingEEGThreadTimer.setInterval(int(self.cueDuration * 1000))
 
     def hide_cue(self):
@@ -571,6 +563,7 @@ class Core(QMainWindow):
     def save_data(self):
         newData = np.array([1]) ##fake data
         self.eeglogger.saveData(newData, fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
+        self.trialDuration = time.time() #timestamp para guardar el tiempo de cada trial
         self.saveEvents() #guardamos los eventos de la sesión
         self.__trialPhase = 0 #volvemos a la fase inicial del trial
         self.supervisionAPP.reset_timeBar = True
@@ -626,52 +619,7 @@ class Core(QMainWindow):
         """Función para hilo de lectura de EEG durante fase de entrenamiento.
         Sólo se almacena trozos de EEG correspondientes a la suma de startTrainingTime y cueDuration.
         """
-        if self.__trialPhase == 0:
-            print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}") 
-            self.indicatorAPP.showCruz(True) #mostramos la cruz
-            self.indicatorAPP.update_order("Fijar la mirada en la cruz...", opacity = 0.3)
-            #Generamos un número aleatorio entre self.startingTimes[0] y self.startingTimes[1], redondeado a 1 decimal
-            startingTime = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 1)
-            self.__startingTime = startingTime
-            startingTime = int(startingTime * 1000) #lo pasamos a milisegundos
-            self.__trialPhase = 1 # pasamos a la siguiente fase -> CUE
-            self.feedbackThreadTimer.setInterval(startingTime) #esperamos el tiempo aleatorio
-
-        elif self.__trialPhase == 1:
-            self.__trialPhase = 2 # la siguiente fase es la de finalización del trial
-            self.indicatorAPP.showCruz(False)
-            claseActual = self.trialsSesion[self.__trialNumber]
-            classNameActual = self.clasesNames[self.classes.index(claseActual)]
-            self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
-                                              background = "rgba(38,38,38,50%)", font_color = "white", opacity = 0.3)
-            self.indicatorAPP.showBar(True)
-            self.indicatorAPP.actualizar_barra(0) #iniciamos la barra en 0%
-            
-            # Tomo los datos de EEG de la duración del cue y los guardo en self._dataToClasify 
-            # Los datos dentro de self._dataToClasify se van actualizando en cada entrada a la función classifyEEG
-            self._dataToClasify = self.eeglogger.getData(self.lenForClassifier, removeDataFromBuffer=False)[self.channels]
-            if not self.classifyEEGTimerStarted:
-                self.classifyEEGTimer.start() #inicio el timer para clasificar el EEG
-                self.classifyEEGTimerStarted = True
-            self.feedbackThreadTimer.setInterval(int((self.cueDuration + self.lenToClassify*0.05) * 1000))
-            #La suma de self.cueDuration + self.lenToClassify*0.05 es para darle un pequeño margen de tiempo
-
-        elif self.__trialPhase == 2:
-            self.classifyEEGTimer.stop() #detenemos el timer de clasificación
-            self.classifyEEGTimerStarted = False
-            self.indicatorAPP.showBar(False)
-            self.indicatorAPP.update_order("Fin de tarea...")
-            self.__trialPhase = -1 #volvemos a la fase inicial del trial
-            self.feedbackThreadTimer.setInterval(int(self.finishDuration * 1000))
-
-        else:
-            #Al finalizar el trial, guardamos los datos de EEG
-            # newData = self.eeglogger.getData(self.__startingTime + self.cueDuration + self.finishDuration, removeDataFromBuffer=False)
-            # self.eeglogger.saveData(newData[self.channels], fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
-            self.saveEvents() #guardamos los eventos de la sesión
-            self.__trialPhase = 0 #volvemos a la fase inicial del trial
-            self.__trialNumber += 1 #incrementamos el número de trial
-            self.feedbackThreadTimer.setInterval(1)
+        pass
 
     def onlineThread(self):
         """Función para hilo de lectura de EEG durante fase de entrenamiento.
