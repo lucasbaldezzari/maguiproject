@@ -122,8 +122,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>81</width>
-     <height>81</height>
+     <width>51</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="mouseTracking">
@@ -144,8 +144,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>81</width>
-     <height>81</height>
+     <width>51</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="mouseTracking">
@@ -164,10 +164,10 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>140</x>
+     <x>160</x>
      <y>0</y>
-     <width>81</width>
-     <height>81</height>
+     <width>51</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="mouseTracking">
@@ -186,10 +186,10 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>140</x>
+     <x>160</x>
      <y>0</y>
-     <width>81</width>
-     <height>81</height>
+     <width>51</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="mouseTracking">
