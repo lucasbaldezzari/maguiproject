@@ -21,7 +21,7 @@
     "lenForClassifier": 4.0,
     "umbralClassifier": 0.8,
     "numberOfRounds": 4.0,
-    "subjectName": "first_test",
+    "subjectName": "magui",
     "sesionNumber": 1,
     "boardParams": {
         "boardName": "synthetic",
