@@ -324,7 +324,7 @@ class Core(QMainWindow):
         #con el mismo nombre que self.eegFileName pero con extensión .txt
         self.eventsFileName = self.eegStoredFolder + self.eegFileName[:-4] + "_events" + ".txt"
         eventsFile = open(self.eventsFileName, "w")
-        eventsFile.write("trialNumber,classNumber,className,startingTime,cueInitTime,trialTime,cueDuration,finishDuration,trialTime(legible)\n")
+        eventsFile.write("trialNumber,classNumber,className,startingTime,cueInitTime,trialTime,cueDuration,finishDuration,startingTime(legible)\n")
         eventsFile.close()
 
     def saveEvents(self):
@@ -341,13 +341,13 @@ class Core(QMainWindow):
         #obtenemos el timestamp actual
         # self.trialDuration = time.time()
         #formateamos el timestamp actual a formato legible del tipo DD/MM/YYYY HH:MM:SS
-        trialTimeLegible = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime(self.trialDuration))
+        startingTimeLegible = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime(self.__trial_init_time))
         
         ##Cabecera de archivo de eventos
-        ##"trialNumber,classNumber,className,startingTime,cueInitTime,trialTime,cueDuration,finishDuration,trialTime(legible)\n"
+        ##"trialNumber,classNumber,className,startingTime,cueInitTime,trialTime,cueDuration,finishDuration,startingTime(legible)\n"
 
         if self.typeSesion == 0:
-            eventos = f"{self.__trialNumber+1},{claseActual},{classNameActual},{self.__trial_init_time},{self.__cue_init_time},{self.trialDuration},{self.cueDuration},{self.finishDuration},{trialTimeLegible}\n"
+            eventos = f"{self.__trialNumber+1},{claseActual},{classNameActual},{self.__trial_init_time},{self.__cue_init_time},{self.trialDuration},{self.cueDuration},{self.finishDuration},{startingTimeLegible}\n"
 
         eventsFile.write(eventos)
         eventsFile.close()
