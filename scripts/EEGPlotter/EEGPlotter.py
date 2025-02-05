@@ -48,9 +48,10 @@ class EEGPlotter:
 
         self.time_axis = self.getTimeAxis() # Creamos el eje de tiempo
         self.current_time = 0 # Iniciamos el tiempo actual en 0
-
+        rows=self.num_channels
+        vertical_spacing = (1 / (rows - 1))
         # Creamos subplots
-        self.fig = make_subplots(rows=self.num_channels, cols=1, shared_xaxes=True, vertical_spacing=0.02,
+        self.fig = make_subplots(rows=rows, cols=1, shared_xaxes=True, vertical_spacing=vertical_spacing,
                                  subplot_titles=[''] * self.num_channels)
 
         # Calculamos la media para cada canal así centramos las señales en la gráfica
@@ -172,12 +173,12 @@ class EEGPlotter:
 if __name__ == "__main__":
     # Generar datos de prueba para EEG (4 canales x 2000 muestras)
     np.random.seed(42)
-    num_channels = 3
-    num_samples = 30000
+    num_channels = 64
+    num_samples = 500
     eeg = np.random.rand(num_channels, num_samples)
 
     # Frecuencia de muestreo (en Hz)
-    fm = 250
+    fm = 512
 
     # Parámetros para el slider y el tamaño de ventana (en segundos)
     paso = 2
