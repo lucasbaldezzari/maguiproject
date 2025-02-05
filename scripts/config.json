@@ -11,8 +11,8 @@
         "DERECHA"
     ],
     "startingTimes": [
-        3.0,
-        3.0
+        2.0,
+        4.0
     ],
     "cueDuration": 2.0,
     "finishDuration": 1.0,

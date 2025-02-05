@@ -319,12 +319,12 @@ class Core(QMainWindow):
                 i += 1
         
         #Cramos un archivo txt que contiene la siguiente cabecera:
-        #trialNumber,classNumber,className,prediction,probabilities,startingTime,cueDuration,finishDuration,trialTime,trialTime(legible)
+        #"trialNumber,classNumber,className,startingTime,cueInitTime,trialDuration,cueDuration,finishDuration,startingTime(legible)\n"
         #Primero creamos el archivo y agregamos la cabecera. Lo guardamos en rootFolder/self.subjectName/eegdata/self.sesionNumber
         #con el mismo nombre que self.eegFileName pero con extensión .txt
         self.eventsFileName = self.eegStoredFolder + self.eegFileName[:-4] + "_events" + ".txt"
         eventsFile = open(self.eventsFileName, "w")
-        eventsFile.write("trialNumber,classNumber,className,startingTime,cueInitTime,trialTime,cueDuration,finishDuration,startingTime(legible)\n")
+        eventsFile.write("trialNumber,classNumber,className,startingTime,cueInitTime,trialDuration,cueDuration,finishDuration,startingTime(legible)\n")
         eventsFile.close()
 
     def saveEvents(self):
@@ -339,12 +339,12 @@ class Core(QMainWindow):
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
 
         #obtenemos el timestamp actual
-        # self.trialDuration = time.time()
+        self.trialDuration = time.time()
         #formateamos el timestamp actual a formato legible del tipo DD/MM/YYYY HH:MM:SS
         startingTimeLegible = time.strftime("%d/%m/%Y %H:%M:%S", time.localtime(self.__trial_init_time))
         
         ##Cabecera de archivo de eventos
-        ##"trialNumber,classNumber,className,startingTime,cueInitTime,trialTime,cueDuration,finishDuration,startingTime(legible)\n"
+        ###"trialNumber,classNumber,className,startingTime,cueInitTime,trialDuration,cueDuration,finishDuration,startingTime(legible)\n"
 
         if self.typeSesion == 0:
             eventos = f"{self.__trialNumber+1},{claseActual},{classNameActual},{self.__trial_init_time},{self.__cue_init_time},{self.trialDuration},{self.cueDuration},{self.finishDuration},{startingTimeLegible}\n"
@@ -449,7 +449,7 @@ class Core(QMainWindow):
         """Función para mostrar el mensaje de preparación de manera paulatina"""
         self.__preparacion_opacity_value += 0.05 #0.1/self.__deltat = 1000ms = 1.0s
         if self.__preparacion_opacity_value <= 1.0:
-            mensaje = "Relajate..."
+            mensaje = "Preparate..."
             background = f"rgba(255,255,255,{self.__preparacion_opacity_value*100}%)"
             font_color = f"rgba(38,38,38,{self.__preparacion_opacity_value*100}%)"
             self.indicatorAPP.update_order(mensaje, fontsize = 46,
@@ -465,14 +465,14 @@ class Core(QMainWindow):
         print(f"Trial {self.__trialNumber + 1} de {len(self.trialsSesion)}")
         self.indicatorAPP.showCueOnSquare(False)
         self.indicatorAPP.showCueOffSquare(True)
-        mensaje = "Relajate..."
+        mensaje = "Preparate..."
         self.indicatorAPP.update_order(mensaje)
         self.__trialPhase = 2 # pasamos a la siguiente fase -> Mostrar cue progresivamente
         self.trainingEEGThreadTimer.setInterval(1) #esperamos el tiempo aleatorio
     
     def hide_preparación(self):
         self.__start_opactity_value -= self.delta_opacity
-        mensaje = "Relajate..."
+        mensaje = "Preparate..."
         if self.__start_opactity_value >= 0.0:
             background = f"rgba(255,255,255,{self.__start_opactity_value*100}%)"
             font_color = f"rgba(38,38,38,{self.__start_opactity_value*100}%)"
@@ -486,7 +486,9 @@ class Core(QMainWindow):
                                             background = background, font_color = font_color)
             self.__trialPhase =  3 ##guardamos los datos de EEG
             self.__start_opactity_value = 1.0
-            self.trainingEEGThreadTimer.setInterval(2000)
+            hidding_final_time = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 3)
+            self.trainingEEGThreadTimer.setInterval(int(hidding_final_time*1000))
+            # self.trainingEEGThreadTimer.setInterval(2000)
 
     def show_cue(self):
         claseActual = self.trialsSesion[self.__trialNumber]
@@ -563,7 +565,7 @@ class Core(QMainWindow):
     def save_data(self):
         newData = np.array([1]) ##fake data
         self.eeglogger.saveData(newData, fileName = self.eegFileName, path = self.eegStoredFolder, append=True)
-        self.trialDuration = time.time() #timestamp para guardar el tiempo de cada trial
+        # self.trialDuration = time.time() #timestamp para guardar el tiempo de cada trial
         self.saveEvents() #guardamos los eventos de la sesión
         self.__trialPhase = 0 #volvemos a la fase inicial del trial
         self.supervisionAPP.reset_timeBar = True
