@@ -141,6 +141,7 @@ class Core(QMainWindow):
         self.__start_opactity_value = 1.0 #valor de opacidad para el texto de preparación
         self.__final_opactity_value = 1.0 #valor de opacidad para el texto de finalización
         self.fade_in_duration = 0.0
+        self.hidding_final_time = 0.0
 
         self.trialDuration = 0 #timestamp para guardar el tiempo de cada trial
         self.sample_rate = self.filterParameters["sample_rate"]
@@ -485,18 +486,17 @@ class Core(QMainWindow):
             font_color = f"rgba(38,38,38,0%)"
             self.indicatorAPP.update_order(mensaje, fontsize = 46,
                                             background = background, font_color = font_color)
-            self.__trialPhase =  3 ##guardamos los datos de EEG
+            self.__trialPhase =  3 ##fase show cue
             self.__start_opactity_value = 1.0
             self.hidding_final_time = round(random.uniform(self.startingTimes[0], self.startingTimes[1]), 3)
-            self.fade_in_duration = time.time()
+            self.aux_fadein_duration = time.time()
             self.trainingEEGThreadTimer.setInterval(int(self.hidding_final_time*1000))
-            # self.trainingEEGThreadTimer.setInterval(2000)
 
     def show_cue(self):
         claseActual = self.trialsSesion[self.__trialNumber]
         classNameActual = self.clasesNames[self.classes.index(claseActual)]
         self.__cue_opacity_value += 0.2 #50/0.2=250ms de fade in
-        if self.__cue_opacity_value <= 1.0:
+        if self.__cue_opacity_value < 1.0:
             background = f"rgba(38,38,38,{self.__cue_opacity_value*100}%)"
             font_color = f"rgba(255,255,255,{self.__cue_opacity_value*100}%)"
             self.indicatorAPP.update_order(f"{classNameActual}", fontsize = 46,
@@ -504,7 +504,7 @@ class Core(QMainWindow):
         else:
             self.__trialPhase =  4 # pasamos a la siguiente fase -> Fase de tarea o cue
             self.__cue_opacity_value = 1
-            self.fade_in_duration = time.time() - self.hidding_final_time - self.fade_in_duration
+            self.fade_in_duration = time.time() - self.aux_fadein_duration - self.hidding_final_time
 
         self.trainingEEGThreadTimer.setInterval(self.__deltat)
 
