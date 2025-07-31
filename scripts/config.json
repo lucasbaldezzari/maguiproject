@@ -1,18 +1,22 @@
 {
     "typeSesion": 0,
     "cueType": 0,
-    "ntrials": 3,
+    "ntrials": 2,
     "classes": [
         1,
-        2
+        2,
+        3,
+        4
     ],
     "clasesNames": [
+        "OJOS",
+        "MORDER",
         "IZQUIERDA",
         "DERECHA"
     ],
     "startingTimes": [
         2.0,
-        4.0
+        2.0
     ],
     "cueDuration": 2.0,
     "finishDuration": 1.0,
@@ -21,7 +25,7 @@
     "lenForClassifier": 4.0,
     "umbralClassifier": 0.8,
     "numberOfRounds": 4.0,
-    "subjectName": "magui",
+    "subjectName": "victoria",
     "sesionNumber": 1,
     "boardParams": {
         "boardName": "synthetic",
